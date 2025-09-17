@@ -142,12 +142,12 @@ class Header extends React.Component {
       <Navbar className={`d-print-none `}>
         <div className={s.burger}>
           <NavLink
-              onClick={this.toggleSidebar}
-              className={`d-md-none ${s.navItem} text-white`}
-              href="#"
-            >
-              <BurgerIcon className={s.headerIcon} />
-            </NavLink>
+            onClick={this.toggleSidebar}
+            className={`d-md-none ${s.navItem} text-white`}
+            href="#"
+          >
+            <BurgerIcon className={s.headerIcon} />
+          </NavLink>
         </div>
         <div className={`d-print-none ${s.root}`}>
           <UncontrolledAlert
@@ -167,9 +167,8 @@ class Header extends React.Component {
             isOpen={this.state.searchOpen}
           >
             <InputGroup
-              className={`${s.navbarForm} ${
-                this.state.searchFocused ? s.navbarFormFocused : ""
-              }`}
+              className={`${s.navbarForm} ${this.state.searchFocused ? s.navbarFormFocused : ""
+                }`}
             >
               <InputGroupAddon addonType="prepend" className={s.inputAddon}>
                 <InputGroupText>
@@ -211,12 +210,12 @@ class Header extends React.Component {
               className={`${s.notificationsMenu}`}
             >
               <DropdownToggle nav caret style={{ color: "#C1C3CF", padding: 0 }}>
-                <span
+                {/* <span
                   className={`${s.avatar} rounded-circle thumb-sm float-left`}
                 >
                   <img src={avatar} alt="..." />
-                </span>
-                <span className={`small d-sm-down-none ${s.accountCheck}`}>Philip smith</span>
+                </span> */}
+                <span className={`small d-sm-down-none ${s.accountCheck}`}>Luong Thi My Duyen</span>
                 <Badge className={`d-sm-down-none ${s.badge}`} color="danger">
                   9
                 </Badge>

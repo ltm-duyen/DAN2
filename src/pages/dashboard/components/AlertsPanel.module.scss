@@ -1,0 +1,78 @@
+.alertsPanel {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.noAlerts {
+    color: #6c757d;
+}
+
+.alertsList {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.alertItem {
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 4px solid;
+    position: relative;
+    animation: slideIn 0.3s ease-out;
+
+    &.danger {
+        border-left-color: #dc3545;
+        background-color: rgba(220, 53, 69, 0.05);
+    }
+
+    &.warning {
+        border-left-color: #ffc107;
+        background-color: rgba(255, 193, 7, 0.05);
+    }
+
+    &.info {
+        border-left-color: #17a2b8;
+        background-color: rgba(23, 162, 184, 0.05);
+    }
+
+    &:last-child {
+        margin-bottom: 0 !important;
+    }
+}
+
+.alertIcon {
+    font-size: 1.2rem;
+    margin-top: 2px;
+}
+
+.alertTitle {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.alertMessage {
+    font-size: 0.85rem;
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+.dismissBtn {
+    color: #6c757d !important;
+    font-size: 0.8rem;
+
+    &:hover {
+        color: #495057 !important;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

@@ -12,6 +12,9 @@ import MapsGoogle from '../../pages/components/maps/google';
 import CoreTypography from '../../pages/typography';
 import Charts from '../../pages/components/charts/Charts';
 import Dashboard from '../../pages/dashboard';
+import Sensors from '../../pages/sensors/Sensors';
+import Controls from '../../pages/controls/Controls';
+import Settings from '../../pages/settings/Settings';
 
 import Header from '../Header';
 import Sidebar from '../Sidebar';
@@ -79,12 +82,14 @@ class Layout extends React.Component {
                   <Switch>
                     <Route path="/app/main" exact render={() => <Redirect to="/app/main/dashboard" />} />
                     <Route path="/app/main/dashboard" exact component={Dashboard} />
-                    <Route path="/app/components/icons" exact component={UIIcons} />
-                    <Route path="/app/notifications" exact component={UINotifications} />
+                    <Route path="/app/sensors" exact component={Sensors} />
+                    <Route path="/app/controls" exact component={Controls} />
+                    <Route path="/app/settings" exact component={Settings} />
+                    {/* <Route path="/app/components/icons" exact component={UIIcons} /> */}
+                    {/* <Route path="/app/notifications" exact component={UINotifications} /> */}
                     <Route path="/app/components/charts" exact component={Charts} />
-                    <Route path="/app/tables" exact component={TablesStatic} />
+                    {/* <Route path="/app/tables" exact component={TablesStatic} /> */}
                     <Route path="/app/components/maps" exact component={MapsGoogle} />
-                    <Route path="/app/typography" exact component={CoreTypography} />
                   </Switch>
                 </CSSTransition>
               </TransitionGroup>

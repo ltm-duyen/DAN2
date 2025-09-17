@@ -1,0 +1,33 @@
+.sensorWidget {
+  .sensorValue {
+    text-align: center;
+    margin: 1.5rem 0;
+    
+    .value {
+      font-size: 2.5rem;
+      font-weight: 600;
+    }
+    
+    .unit {
+      font-size: 1rem;
+      margin-left: 0.5rem;
+    }
+  }
+  
+  .sensorInfo {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+.statCard {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: #f8f9fa;
+  
+  h4 {
+    margin-bottom: 0.5rem;
+  }
+}
