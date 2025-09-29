@@ -1,5 +1,5 @@
 import React from "react";
-import { Row, Col } from "reactstrap";
+import { Row, Col, Badge } from "reactstrap";
 
 import Widget from "../../components/Widget";
 import SensorCard from "./components/SensorCard";
@@ -14,14 +14,30 @@ class Dashboard extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      // Dữ liệu cảm biến (sẽ được cập nhật từ API thực tế)
+      // API Configuration
+      apiBaseUrl: "http://localhost/aquabox/test_data.php",
+
+      // Dữ liệu cảm biến từ API
       sensors: {
-        temperature: { value: 26.5, status: 'normal', unit: '°C' },
-        pH: { value: 5.5, status: 'danger', unit: '' },
-        turbidity: { value: 15.2, status: 'warning', unit: 'NTU' },
-        oxygen: { value: 4.2, status: 'warning', unit: 'mg/L' },
-        waterLevel: { value: 85, status: 'normal', unit: '%' }
+        temperature: { value: 0, status: 'normal', unit: '°C' },
+        turbidity: { value: 0, status: 'normal', unit: 'NTU' },
+        current: { value: 0, status: 'normal', unit: 'A' },
+        dissolvedOxygen: { value: 0, status: 'normal', unit: 'mg/L' },
+        waterLevel: { value: 0, status: 'normal', unit: 'cm' }
       },
+
+      // Lịch sử dữ liệu cho biểu đồ
+      chartData: {
+        temperature: [],
+        turbidity: [],
+        current: [],
+        dissolvedOxygen: [],
+        waterLevel: []
+      },
+
+      // Thông tin chi tiết từ API
+      waterQuality: 'UNKNOWN',
+      rawData: null,
 
       // Trạng thái thiết bị
       devices: [
@@ -32,65 +48,276 @@ class Dashboard extends React.Component {
       ],
 
       // Cảnh báo
-      alerts: [
-        {
-          type: 'danger',
-          title: 'pH nước quá thấp',
-          message: 'pH hiện tại là 5.5, cần kiểm tra và điều chỉnh chất lượng nước',
-          timestamp: new Date().getTime()
-        },
-        {
-          type: 'warning',
-          title: 'Oxy hòa tan thấp',
-          message: 'Nồng độ oxy 4.2 mg/L, nên bật máy sục khí',
-          timestamp: new Date().getTime() - 300000
-        }
-      ],
+      alerts: [],
 
-      // Trạng thái feeding
-      isFeeding: false
+      // Trạng thái
+      isFeeding: false,
+      isLoading: true,
+      lastUpdate: null,
+      connectionStatus: 'connecting'
     };
   }
 
-  // Cập nhật dữ liệu cảm biến (mô phỏng real-time)
   componentDidMount() {
-    this.sensorInterval = setInterval(() => {
-      this.updateSensorData();
-    }, 5000); // Cập nhật mỗi 5 giây
+    // Fetch dữ liệu lần đầu
+    this.fetchLatestData();
+    this.fetchAllData();
+
+    // Cập nhật dữ liệu mỗi 5 giây
+    this.dataInterval = setInterval(() => {
+      this.fetchLatestData();
+    }, 5000);
+
+    // Fetch lịch sử dữ liệu mỗi 30 giây
+    this.chartInterval = setInterval(() => {
+      this.fetchAllData();
+    }, 30000);
   }
 
   componentWillUnmount() {
-    if (this.sensorInterval) {
-      clearInterval(this.sensorInterval);
+    if (this.dataInterval) {
+      clearInterval(this.dataInterval);
+    }
+    if (this.chartInterval) {
+      clearInterval(this.chartInterval);
     }
   }
 
-  updateSensorData = () => {
-    this.setState(prevState => ({
-      sensors: {
-        ...prevState.sensors,
-        temperature: {
-          ...prevState.sensors.temperature,
-          value: (25 + Math.random() * 4).toFixed(1)
-        },
-        pH: {
-          ...prevState.sensors.pH,
-          value: (6.5 + (Math.random() - 0.5) * 2).toFixed(1)
-        },
-        turbidity: {
-          ...prevState.sensors.turbidity,
-          value: (10 + Math.random() * 15).toFixed(1)
-        },
-        oxygen: {
-          ...prevState.sensors.oxygen,
-          value: (4 + Math.random() * 3).toFixed(1)
-        },
-        waterLevel: {
-          ...prevState.sensors.waterLevel,
-          value: Math.floor(80 + Math.random() * 20)
-        }
+  // Fetch dữ liệu mới nhất từ API
+  fetchLatestData = async () => {
+    try {
+      console.log('Fetching data from:', this.state.apiBaseUrl);
+      const response = await fetch(this.state.apiBaseUrl);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    }));
+
+      const result = await response.json();
+      console.log('API Response:', result);
+
+      if (result.success && result.data && result.data.length > 0) {
+        const latestData = result.data[0];
+        console.log('Latest data:', latestData);
+        this.updateSensorsFromAPI(latestData);
+        this.setState({
+          isLoading: false,
+          connectionStatus: 'connected',
+          lastUpdate: new Date(latestData.created_at || Date.now()),
+          waterQuality: latestData.water_quality || 'UNKNOWN',
+          rawData: latestData
+        });
+      } else {
+        console.warn('No data received from API:', result);
+        this.setState({
+          isLoading: false,
+          connectionStatus: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching latest data:', error);
+      this.setState({
+        connectionStatus: 'error',
+        isLoading: false
+      });
+    }
+  }
+
+  // Fetch tất cả dữ liệu cho biểu đồ
+  fetchAllData = async () => {
+    try {
+      const response = await fetch(this.state.apiBaseUrl);
+      const result = await response.json();
+
+      if (result.success && result.data.length > 0) {
+        this.updateChartData(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching all data:', error);
+    }
+  }
+
+  // Cập nhật dữ liệu cảm biến từ API response
+  updateSensorsFromAPI = (data) => {
+    console.log('Updating sensors with data:', data);
+
+    // Đảm bảo có giá trị mặc định nếu API không trả về
+    const temperatureValue = data.temperature_c !== undefined ? parseFloat(data.temperature_c) : 0;
+    const turbidityValue = data.turbidity_ntu !== undefined ? parseFloat(data.turbidity_ntu) : 0;
+    const currentValue = data.current_a !== undefined ? parseFloat(data.current_a) : 0;
+  const dissolvedOxygenValue = data.dissolved_oxygen !== undefined ? parseFloat(data.dissolved_oxygen) : 0;
+  const waterLevelValue = data.water_level_cm !== undefined ? parseFloat(data.water_level_cm) : 0;
+
+    const sensors = {
+      temperature: {
+        value: temperatureValue.toFixed(1),
+        status: this.getTemperatureStatus(temperatureValue),
+        unit: '°C'
+      },
+      turbidity: {
+        value: turbidityValue.toFixed(1),
+        status: this.getTurbidityStatus(turbidityValue),
+        unit: 'NTU'
+      },
+      current: {
+        value: currentValue.toFixed(3),
+        status: this.getCurrentStatus(currentValue),
+        unit: 'A'
+      },
+      dissolvedOxygen: {
+        value: dissolvedOxygenValue.toFixed(2),
+        status: this.getDissolvedOxygenStatus(dissolvedOxygenValue),
+        unit: 'mg/L'
+      },
+      waterLevel: {
+        value: waterLevelValue.toFixed(2),
+        status: this.getWaterLevelStatus(waterLevelValue),
+        unit: 'cm'
+      }
+    };
+
+    console.log('Processed sensors:', sensors);
+
+    // Tạo cảnh báo nếu cần
+    this.checkAndCreateAlerts(sensors, data);
+
+    this.setState({ sensors });
+  }
+
+  // Cập nhật dữ liệu biểu đồ
+  updateChartData = (dataArray) => {
+    const chartData = {
+      temperature: dataArray.map(item => parseFloat(item.temperature_c)),
+      turbidity: dataArray.map(item => parseFloat(item.turbidity_ntu)),
+      current: dataArray.map(item => parseFloat(item.current_a)),
+      dissolvedOxygen: dataArray.map(item => parseFloat(item.dissolved_oxygen)),
+      waterLevel: dataArray.map(item => parseFloat(item.water_level_cm || 0))
+    };
+
+    this.setState({ chartData });
+  }
+
+  // Xác định trạng thái nhiệt độ
+  getTemperatureStatus = (temp) => {
+    if (temp < 24 || temp > 30) return 'danger';
+    if (temp < 25 || temp > 29) return 'warning';
+    return 'normal';
+  }
+
+  // Xác định trạng thái độ đục
+  getTurbidityStatus = (ntu) => {
+    if (ntu > 500) return 'danger';
+    if (ntu > 100) return 'warning';
+    return 'normal';
+  }
+
+  // Xác định trạng thái dòng điện
+  getCurrentStatus = (current) => {
+    if (current > 1.0) return 'danger';
+    if (current > 0.7) return 'warning';
+    return 'normal';
+  }
+
+  // Xác định trạng thái oxy hòa tan
+  getDissolvedOxygenStatus = (do_value) => {
+    if (do_value < 5.0) return 'danger';     // Dưới 5mg/L nguy hiểm
+    if (do_value < 6.0) return 'warning';    // 5-6mg/L cảnh báo
+    if (do_value > 12.0) return 'warning';   // Trên 12mg/L cũng không tốt
+    return 'normal';                         // 6-12mg/L bình thường
+  }
+
+  // Xác định trạng thái mực nước (cm)
+  getWaterLevelStatus = (level_cm) => {
+    // Giả định: dưới 5cm rất thấp (danger), 5-10cm cảnh báo, trên 10cm bình thường
+    if (level_cm < 5) return 'danger';
+    if (level_cm < 10) return 'warning';
+    return 'normal';
+  }
+
+  // Kiểm tra và tạo cảnh báo
+  checkAndCreateAlerts = (sensors, data) => {
+    const newAlerts = [];
+
+    // Cảnh báo nhiệt độ
+    if (sensors.temperature.status === 'danger') {
+      newAlerts.push({
+        type: 'danger',
+        title: 'Nhiệt độ nước bất thường',
+        message: `Nhiệt độ hiện tại ${sensors.temperature.value}°C vượt quá giới hạn an toàn (24-30°C)`,
+        timestamp: Date.now()
+      });
+    }
+
+    // Cảnh báo độ đục
+    if (sensors.turbidity.status === 'danger') {
+      newAlerts.push({
+        type: 'danger',
+        title: 'Nước quá đục',
+        message: `Độ đục ${sensors.turbidity.value} NTU - Chất lượng nước: ${data.water_quality}`,
+        timestamp: Date.now()
+      });
+    } else if (sensors.turbidity.status === 'warning') {
+      newAlerts.push({
+        type: 'warning',
+        title: 'Nước hơi đục',
+        message: `Độ đục ${sensors.turbidity.value} NTU - Chất lượng nước: ${data.water_quality}`,
+        timestamp: Date.now()
+      });
+    }
+
+    // Cảnh báo dòng điện
+    if (sensors.current.status === 'danger') {
+      newAlerts.push({
+        type: 'danger',
+        title: 'Dòng điện máy bơm cao',
+        message: `Dòng điện ${sensors.current.value}A có thể báo hiệu sự cố máy bơm`,
+        timestamp: Date.now()
+      });
+    }
+
+    // Cảnh báo oxy hòa tan
+    if (sensors.dissolvedOxygen.status === 'danger') {
+      newAlerts.push({
+        type: 'danger',
+        title: 'Oxy hòa tan nguy hiểm',
+        message: `Oxy hòa tan ${sensors.dissolvedOxygen.value} mg/L quá thấp, cá có thể thiếu oxy`,
+        timestamp: Date.now()
+      });
+    } else if (sensors.dissolvedOxygen.status === 'warning') {
+      newAlerts.push({
+        type: 'warning',
+        title: 'Oxy hòa tan cần chú ý',
+        message: `Oxy hòa tan ${sensors.dissolvedOxygen.value} mg/L nằm ngoài khoảng lý tưởng`,
+        timestamp: Date.now()
+      });
+    }
+
+    // Cảnh báo mực nước
+    if (sensors.waterLevel.status === 'danger') {
+      newAlerts.push({
+        type: 'danger',
+        title: 'Mực nước quá thấp',
+        message: `Mực nước ${sensors.waterLevel.value} cm dưới mức an toàn`,
+        timestamp: Date.now()
+      });
+    } else if (sensors.waterLevel.status === 'warning') {
+      newAlerts.push({
+        type: 'warning',
+        title: 'Mực nước cần chú ý',
+        message: `Mực nước ${sensors.waterLevel.value} cm nằm gần ngưỡng thấp`,
+        timestamp: Date.now()
+      });
+    }
+
+    // Cập nhật alerts (chỉ giữ alerts mới, xóa alerts cũ cùng loại)
+    this.setState(prevState => {
+      const filteredAlerts = prevState.alerts.filter(alert =>
+        !newAlerts.some(newAlert => newAlert.title === alert.title)
+      );
+      return {
+        alerts: [...filteredAlerts, ...newAlerts].slice(-5) // Chỉ giữ 5 alerts mới nhất
+      };
+    });
   }
 
   // Xử lý bật/tắt thiết bị
@@ -104,36 +331,7 @@ class Dashboard extends React.Component {
     }));
   }
 
-  // Xử lý cho ăn
-  handleFeedFish = () => {
-    this.setState({ isFeeding: true });
 
-    // Cập nhật thời gian cho ăn và tắt trạng thái feeding sau 3 giây
-    setTimeout(() => {
-      const now = new Date();
-      const timeString = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
-
-      this.setState(prevState => ({
-        isFeeding: false,
-        devices: prevState.devices.map(device =>
-          device.type === 'feeder'
-            ? { ...device, lastFeed: timeString }
-            : device
-        )
-      }));
-    }, 3000);
-  }
-
-  // Xử lý bật/tắt đèn
-  handleToggleLight = () => {
-    this.setState(prevState => ({
-      devices: prevState.devices.map(device =>
-        device.type === 'light'
-          ? { ...device, isOn: !device.isOn }
-          : device
-      )
-    }));
-  }
 
   // Xử lý xóa cảnh báo
   handleDismissAlert = (index) => {
@@ -147,23 +345,77 @@ class Dashboard extends React.Component {
     this.setState({ alerts: [] });
   }
 
-  render() {
-    const { sensors, devices, alerts, isFeeding } = this.state;
-    const lightDevice = devices.find(d => d.type === 'light');
+  // Get connection status badge
+  getConnectionBadge = () => {
+    const { connectionStatus } = this.state;
+    const statusConfig = {
+      connecting: { color: 'warning', text: 'Đang kết nối...' },
+      connected: { color: 'success', text: 'Trực tuyến' },
+      error: { color: 'danger', text: 'Mất kết nối' }
+    };
 
-    // Tạo dữ liệu mẫu cho biểu đồ 24h
-    const tempData = Array.from({ length: 24 }, () => 25 + Math.random() * 4);
-    const pHData = Array.from({ length: 24 }, () => 6.5 + (Math.random() - 0.5) * 2);
-    const turbidityData = Array.from({ length: 24 }, () => 10 + Math.random() * 15);
+    const config = statusConfig[connectionStatus] || statusConfig.error;
+    return <Badge color={config.color}>{config.text}</Badge>;
+  }
+
+  render() {
+    const {
+      sensors,
+      devices,
+      alerts,
+      isFeeding,
+      chartData,
+      waterQuality,
+      lastUpdate,
+      isLoading,
+      connectionStatus,
+      rawData
+    } = this.state;
+
+    const lightDevice = devices.find(d => d.type === 'light');
 
     return (
       <div className={s.root}>
-        <h1 className="page-title">
-          🐠 Dashboard Quản lý Hồ Cá &nbsp;
-          <small>
-            <small>Hệ thống IoT thông minh</small>
-          </small>
-        </h1>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h1 className="page-title mb-0">
+            🐠 Dashboard Quản lý Hồ Cá &nbsp;
+            <small>
+              <small>Hệ thống IoT thông minh</small>
+            </small>
+          </h1>
+
+          <div className="d-flex align-items-center">
+            {this.getConnectionBadge()}
+            {lastUpdate && (
+              <small className="text-muted ml-3">
+                Cập nhật: {lastUpdate.toLocaleTimeString()}
+              </small>
+            )}
+          </div>
+        </div>
+
+
+
+        {/* Thông tin chất lượng nước */}
+        {waterQuality && waterQuality !== 'UNKNOWN' && (
+          <Row className="mb-4">
+            <Col lg={12}>
+              <Widget>
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 className="mb-1">🌊 Chất lượng nước hiện tại</h6>
+                    <h4 className={`mb-0 ${waterQuality.includes('DUC') ? 'text-danger' : 'text-success'}`}>
+                      {waterQuality}
+                    </h4>
+                  </div>
+                  <div className="text-right">
+                    <small className="text-muted">Đánh giá tự động từ cảm biến độ đục</small>
+                  </div>
+                </div>
+              </Widget>
+            </Col>
+          </Row>
+        )}
 
         {/* Phần 1: Thông tin cảm biến realtime */}
         <Row className="mb-4">
@@ -176,62 +428,65 @@ class Dashboard extends React.Component {
         </Row>
 
         <Row className="mb-4">
-          <Col lg={2} md={4} sm={6} xs={12} className="mb-3">
+          <Col lg={3} md={6} sm={6} xs={12} className="mb-3">
             <SensorCard
               icon="🌡️"
               title="Nhiệt độ nước"
-              value={sensors.temperature.value}
+              value={isLoading ? '...' : sensors.temperature.value}
               unit={sensors.temperature.unit}
               status={sensors.temperature.status}
-              description="Nhiệt độ lý tưởng: 25-28°C"
+              description="Nhiệt độ lý tưởng: 24-30°C"
             />
           </Col>
 
-          <Col lg={2} md={4} sm={6} xs={12} className="mb-3">
-            <SensorCard
-              icon="💧"
-              title="Độ pH"
-              value={sensors.pH.value}
-              unit={sensors.pH.unit}
-              status={sensors.pH.status}
-              description="pH lý tưởng: 6.5-7.5"
-            />
-          </Col>
-
-          <Col lg={2} md={4} sm={6} xs={12} className="mb-3">
+          <Col lg={3} md={6} sm={6} xs={12} className="mb-3">
             <SensorCard
               icon="🌫️"
               title="Độ đục nước"
-              value={sensors.turbidity.value}
+              value={isLoading ? '...' : sensors.turbidity.value}
               unit={sensors.turbidity.unit}
               status={sensors.turbidity.status}
               description="Thấp hơn tốt hơn"
             />
           </Col>
 
-          <Col lg={2} md={4} sm={6} xs={12} className="mb-3">
+          <Col lg={3} md={6} sm={6} xs={12} className="mb-3">
+            <SensorCard
+              icon="⚡"
+              title="Dòng điện máy bơm"
+              value={isLoading ? '...' : sensors.current.value}
+              unit={sensors.current.unit}
+              status={sensors.current.status}
+              description="Giám sát hoạt động máy bơm"
+            />
+          </Col>
+
+          <Col lg={3} md={6} sm={6} xs={12} className="mb-3">
             <SensorCard
               icon="🫧"
               title="Oxy hòa tan"
-              value={sensors.oxygen.value}
-              unit={sensors.oxygen.unit}
-              status={sensors.oxygen.status}
-              description="Tối thiểu: 5 mg/L"
+              value={isLoading ? '...' : sensors.dissolvedOxygen.value}
+              unit={sensors.dissolvedOxygen.unit}
+              status={sensors.dissolvedOxygen.status}
+              description="Lý tưởng: 6-12 mg/L"
             />
           </Col>
 
-          <Col lg={2} md={4} sm={6} xs={12} className="mb-3">
+          <Col lg={3} md={6} sm={6} xs={12} className="mb-3">
             <SensorCard
-              icon="📏"
+              icon="💧"
               title="Mực nước"
-              value={sensors.waterLevel.value}
+              value={isLoading ? '...' : sensors.waterLevel.value}
               unit={sensors.waterLevel.unit}
               status={sensors.waterLevel.status}
-              description="Mức an toàn: 80-95%"
+              description="Đơn vị: cm"
             />
           </Col>
+        </Row>
 
-          <Col lg={2} md={4} sm={6} xs={12} className="mb-3">
+        {/* Quick Actions Row */}
+        <Row className="mb-4">
+          <Col lg={12} className="mb-3">
             <QuickActions
               onToggleLight={this.handleToggleLight}
               onFeedFish={this.handleFeedFish}
@@ -242,7 +497,7 @@ class Dashboard extends React.Component {
           </Col>
         </Row>
 
-        {/* Phần 2: Trạng thái thiết bị và Biểu đồ */}
+        {/* Phần 2: Trạng thái thiết bị và Cảnh báo */}
         <Row className="mb-4">
           <Col lg={6} className="mb-3">
             <DeviceStatus
@@ -261,41 +516,59 @@ class Dashboard extends React.Component {
           </Col>
         </Row>
 
-        {/* Phần 3: Biểu đồ nhanh 24h */}
+        {/* Phần 3: Biểu đồ nhanh */}
         <Row className="mb-4">
           <Col lg={12}>
             <h5 className="mb-3">
               <i className="fa fa-line-chart mr-2"></i>
-              Biểu đồ theo dõi 24h qua
+              Biểu đồ theo dõi dữ liệu gần đây
             </h5>
           </Col>
         </Row>
 
         <Row>
-          <Col lg={4} md={12} className="mb-3">
+          <Col lg={3} md={6} className="mb-3">
             <MiniChart
               title="Nhiệt độ nước"
-              data={tempData}
+              data={chartData.temperature.length ? chartData.temperature : [26.5]}
               color="#dc3545"
               unit="°C"
             />
           </Col>
 
-          <Col lg={4} md={12} className="mb-3">
+          <Col lg={3} md={6} className="mb-3">
             <MiniChart
-              title="Độ pH"
-              data={pHData}
-              color="#007bff"
-              unit=""
+              title="Độ đục nước"
+              data={chartData.turbidity.length ? chartData.turbidity : [15.2]}
+              color="#ffc107"
+              unit=" NTU"
             />
           </Col>
 
-          <Col lg={4} md={12} className="mb-3">
+          <Col lg={3} md={6} className="mb-3">
             <MiniChart
-              title="Độ đục nước"
-              data={turbidityData}
-              color="#ffc107"
-              unit=" NTU"
+              title="Dòng điện máy bơm"
+              data={chartData.current.length ? chartData.current : [0.5]}
+              color="#28a745"
+              unit=" A"
+            />
+          </Col>
+
+          <Col lg={3} md={6} className="mb-3">
+            <MiniChart
+              title="Oxy hòa tan"
+              data={chartData.dissolvedOxygen.length ? chartData.dissolvedOxygen : [7.5]}
+              color="#17a2b8"
+              unit=" mg/L"
+            />
+          </Col>
+
+          <Col lg={3} md={6} className="mb-3">
+            <MiniChart
+              title="Mực nước"
+              data={chartData.waterLevel.length ? chartData.waterLevel : [12.0]}
+              color="#007bff"
+              unit=" cm"
             />
           </Col>
         </Row>

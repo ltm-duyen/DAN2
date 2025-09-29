@@ -150,18 +150,7 @@ class Header extends React.Component {
           </NavLink>
         </div>
         <div className={`d-print-none ${s.root}`}>
-          <UncontrolledAlert
-            className={`${s.alert} mr-3 d-lg-down-none animate__animated animate__bounceIn animate__delay-1s`}
-          >
-            Check out Light Blue{" "}
-            <button
-              className="btn-link"
-              onClick={() => this.setState({ settingsOpen: true })}
-            >
-              <SettingsIcon className={s.settingsIcon} />
-            </button>{" "}
-            on the right!
-          </UncontrolledAlert>
+
           <Collapse
             className={`${s.searchCollapse} ml-lg-0 mr-md-3`}
             isOpen={this.state.searchOpen}
@@ -216,15 +205,15 @@ class Header extends React.Component {
                   <img src={avatar} alt="..." />
                 </span> */}
                 <span className={`small d-sm-down-none ${s.accountCheck}`}>Luong Thi My Duyen</span>
-                <Badge className={`d-sm-down-none ${s.badge}`} color="danger">
+                {/* <Badge className={`d-sm-down-none ${s.badge}`} color="danger">
                   9
-                </Badge>
+                </Badge> */}
               </DropdownToggle>
               <DropdownMenu
                 right
                 className={`${s.notificationsWrapper} py-0 animate__animated animate__faster animate__fadeInUp`}
               >
-                <Notifications />
+                {/* <Notifications /> */}
               </DropdownMenu>
             </Dropdown>
             <NavItem className="d-lg-none">
@@ -246,7 +235,7 @@ class Header extends React.Component {
                 <MessageIcon className={s.headerIcon} />
               </DropdownToggle>
               <DropdownMenu className={`${s.dropdownMenu} ${s.messages}`}>
-                <DropdownItem>
+                {/* <DropdownItem>
                   <img className={s.image} src={sender1} alt="" />
                   <div className={s.details}>
                     <div>Jane Hew</div>
@@ -261,8 +250,8 @@ class Header extends React.Component {
                       I will definitely buy this template
                     </div>
                   </div>
-                </DropdownItem>
-                <DropdownItem>
+                </DropdownItem> */}
+                {/* <DropdownItem>
                   <img className={s.image} src={sender3} alt="" />
                   <div className={s.details}>
                     <div>Michał Rumiancaŭ</div>
@@ -270,13 +259,8 @@ class Header extends React.Component {
                       Is it really Lore ipsum? Lore ...
                     </div>
                   </div>
-                </DropdownItem>
-                <DropdownItem>
-                  {/* eslint-disable-next-line */}
-                  <a href="#" className="text-white">
-                    See all messages <ArrowIcon className={s.headerIcon} maskName="messagesArrow" />
-                  </a>
-                </DropdownItem>
+                </DropdownItem> */}
+
               </DropdownMenu>
             </Dropdown>
             <NavItem className={`${s.divider} d-none d-sm-block`} />
@@ -365,12 +349,12 @@ class Header extends React.Component {
                     This is just a simple notification
                   </div>
                 </DropdownItem>
-                <DropdownItem>
+                {/* <DropdownItem>
                   <Badge color="info">
                     <i className="fa fa-plus" />
                   </Badge>
                   <div className={s.details}>12 new orders has arrived today</div>
-                </DropdownItem>
+                </DropdownItem> */}
                 <DropdownItem>
                   <Badge color="danger">
                     <i className="fa fa-tag" />

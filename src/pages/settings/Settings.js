@@ -65,7 +65,7 @@ class Settings extends React.Component {
     this.setState(prevState => ({
       systemSettings: {
         ...prevState.systemSettings,
-        feedingTimes: prevState.systemSettings.feedingTimes.map((time, i) => 
+        feedingTimes: prevState.systemSettings.feedingTimes.map((time, i) =>
           i === index ? value : time
         )
       }
@@ -129,10 +129,10 @@ class Settings extends React.Component {
 
   exportSettings = () => {
     const dataStr = JSON.stringify(this.state.systemSettings, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
     const exportFileDefaultName = 'fishtank_settings.json';
-    
+
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
@@ -162,7 +162,7 @@ class Settings extends React.Component {
         <Row>
           {/* Cài đặt hệ thống */}
           <Col lg={6} className="mb-4">
-            <Widget 
+            <Widget
               title={
                 <h5>
                   🎛️ Cài đặt hệ thống
@@ -311,7 +311,7 @@ class Settings extends React.Component {
 
           {/* Cài đặt thông báo */}
           <Col lg={6} className="mb-4">
-            <Widget 
+            <Widget
               title={
                 <h5>
                   🔔 Cài đặt thông báo
@@ -383,7 +383,7 @@ class Settings extends React.Component {
         {/* Lịch bảo trì */}
         <Row>
           <Col lg={12} className="mb-4">
-            <Widget 
+            <Widget
               title={
                 <h5>
                   🔧 Lịch bảo trì hệ thống
@@ -394,9 +394,9 @@ class Settings extends React.Component {
                 {Object.entries(maintenanceSchedule).map(([key, schedule]) => (
                   <div key={key} className="col-md-3 col-6 mb-3">
                     <div className={s.maintenanceCard}>
-                      <h6>{key === 'waterChange' ? 'Thay nước' : 
-                           key === 'filterCleaning' ? 'Vệ sinh lọc' :
-                           key === 'pHCheck' ? 'Kiểm tra pH' : 'Kiểm tra thiết bị'}</h6>
+                      <h6>{key === 'waterChange' ? 'Thay nước' :
+                        key === 'filterCleaning' ? 'Vệ sinh lọc' :
+                          key === 'pHCheck' ? 'Kiểm tra pH' : 'Kiểm tra thiết bị'}</h6>
                       <div className="mb-2">
                         <small className="text-muted">Tần suất:</small>
                         <div>{schedule.frequency}</div>

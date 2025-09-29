@@ -2,19 +2,19 @@
   display: flex;
   align-items: center;
   padding: 1rem;
-  
+
   .statIcon {
     font-size: 2rem;
     margin-right: 1rem;
     opacity: 0.8;
   }
-  
+
   .statInfo {
     h4 {
       margin-bottom: 0.5rem;
       font-weight: 600;
     }
-    
+
     small {
       color: #6c757d;
     }
@@ -26,7 +26,7 @@
     font-size: 2rem;
     margin-right: 1rem;
   }
-  
+
   .deviceInfo {
     background-color: #f8f9fa;
     padding: 1rem;
@@ -34,7 +34,7 @@
     margin-bottom: 1rem;
     font-size: 0.9rem;
   }
-  
+
   .deviceControls {
     padding-top: 1rem;
     border-top: 1px solid #e9ecef;
