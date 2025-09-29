@@ -92,7 +92,7 @@ class Controls extends React.Component {
       }
       return sum;
     }, 0);
-    
+
     this.setState({ totalPowerConsumption: total });
   }
 
@@ -109,7 +109,7 @@ class Controls extends React.Component {
   handleFeedNow = () => {
     const now = new Date();
     const timeString = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
-    
+
     this.setState(prevState => ({
       devices: prevState.devices.map(device =>
         device.type === 'feeder'
@@ -153,7 +153,7 @@ class Controls extends React.Component {
               </div>
             </Widget>
           </Col>
-          
+
           <Col lg={3} md={6} className="mb-3">
             <Widget>
               <div className={s.statCard}>
@@ -165,7 +165,7 @@ class Controls extends React.Component {
               </div>
             </Widget>
           </Col>
-          
+
           <Col lg={3} md={6} className="mb-3">
             <Widget>
               <div className={s.statCard}>
@@ -177,7 +177,7 @@ class Controls extends React.Component {
               </div>
             </Widget>
           </Col>
-          
+
           <Col lg={3} md={6} className="mb-3">
             <Widget>
               <div className={s.statCard}>
@@ -205,7 +205,7 @@ class Controls extends React.Component {
                         <small className="text-muted">{device.description}</small>
                       </div>
                     </div>
-                    
+
                     <Badge color={this.getDeviceStatusColor(device.isOn)}>
                       {this.getDeviceStatusText(device.isOn)}
                     </Badge>
@@ -265,7 +265,7 @@ class Controls extends React.Component {
         {/* Điều khiển tổng thể */}
         <Row>
           <Col lg={12}>
-            <Widget 
+            <Widget
               title={
                 <h5>
                   🎮 Điều khiển tổng thể
@@ -274,8 +274,8 @@ class Controls extends React.Component {
             >
               <div className="row">
                 <div className="col-md-4 mb-3">
-                  <Button 
-                    color="success" 
+                  <Button
+                    color="success"
                     block
                     onClick={() => {
                       this.setState(prevState => ({
@@ -287,8 +287,8 @@ class Controls extends React.Component {
                   </Button>
                 </div>
                 <div className="col-md-4 mb-3">
-                  <Button 
-                    color="danger" 
+                  <Button
+                    color="danger"
                     block
                     onClick={() => {
                       this.setState(prevState => ({
@@ -300,8 +300,8 @@ class Controls extends React.Component {
                   </Button>
                 </div>
                 <div className="col-md-4 mb-3">
-                  <Button 
-                    color="warning" 
+                  <Button
+                    color="warning"
                     block
                     onClick={() => {
                       // Reset về trạng thái mặc định

@@ -83,19 +83,16 @@ class Layout extends React.Component {
                     <Route path="/app/main" exact render={() => <Redirect to="/app/main/dashboard" />} />
                     <Route path="/app/main/dashboard" exact component={Dashboard} />
                     <Route path="/app/sensors" exact component={Sensors} />
-                    <Route path="/app/controls" exact component={Controls} />
+                    {/* <Route path="/app/controls" exact component={Controls} /> */}
                     <Route path="/app/settings" exact component={Settings} />
-                    {/* <Route path="/app/components/icons" exact component={UIIcons} /> */}
+                    <Route path="/app/components/formulas" exact component={UIIcons} />
                     {/* <Route path="/app/notifications" exact component={UINotifications} /> */}
                     <Route path="/app/components/charts" exact component={Charts} />
                     {/* <Route path="/app/tables" exact component={TablesStatic} /> */}
-                    <Route path="/app/components/maps" exact component={MapsGoogle} />
+                    {/* <Route path="/app/components/maps" exact component={MapsGoogle} /> */}
                   </Switch>
                 </CSSTransition>
               </TransitionGroup>
-              <footer className={s.contentFooter}>
-                Light Blue React Template - React admin template made by <a href="https://flatlogic.com" >Flatlogic</a>
-              </footer>
             </main>
           </Hammer>
         </div>

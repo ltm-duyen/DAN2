@@ -7,46 +7,81 @@ class Sensors extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+            // API Configuration
+            apiBaseUrl: "http://localhost/aquabox/test_data.php?action=latest",
+
+            // Dữ liệu cảm biến từ API
             sensors: {
-                pumpCurrent: {
-                    name: 'Dòng điện máy bơm oxy',
-                    value: 2.4,
-                    unit: 'A',
+                temperature: {
+                    name: 'Cảm biến nhiệt độ nước',
+                    value: 0,
+                    unit: '°C',
                     status: 'normal',
-                    range: { min: 2.0, max: 3.5 },
-                    location: 'Máy bơm oxy',
+                    range: { min: 24, max: 30 },
+                    location: 'Hồ cá chính',
                     lastUpdate: new Date().toLocaleTimeString(),
-                    description: 'Giám sát dòng điện tiêu thụ của máy bơm oxy'
+                    description: 'Theo dõi nhiệt độ nước trong hồ cá'
                 },
                 turbidity: {
                     name: 'Cảm biến độ đục nước',
-                    value: 12.3,
+                    value: 0,
                     unit: 'NTU',
-                    status: 'warning',
-                    range: { min: 0, max: 15 },
+                    status: 'normal',
+                    range: { min: 0, max: 100 },
                     location: 'Hồ cá chính',
                     lastUpdate: new Date().toLocaleTimeString(),
                     description: 'Đo độ trong suốt của nước hồ'
                 },
-                temperature: {
-                    name: 'Cảm biến nhiệt độ nước',
-                    value: 26.5,
-                    unit: '°C',
+                current: {
+                    name: 'Dòng điện máy bơm',
+                    value: 0,
+                    unit: 'A',
                     status: 'normal',
-                    range: { min: 24, max: 28 },
+                    range: { min: 0.3, max: 1.0 },
+                    location: 'Máy bơm nước',
+                    lastUpdate: new Date().toLocaleTimeString(),
+                    description: 'Giám sát dòng điện tiêu thụ của máy bơm'
+                },
+                dissolvedOxygen: {
+                    name: 'Cảm biến oxy hòa tan',
+                    value: 0,
+                    unit: 'mg/L',
+                    status: 'normal',
+                    range: { min: 6, max: 12 },
                     location: 'Hồ cá chính',
                     lastUpdate: new Date().toLocaleTimeString(),
-                    description: 'Theo dõi nhiệt độ nước trong hồ cá'
+                    description: 'Đo lượng oxy hòa tan trong nước'
                 }
-            }
+                ,
+                waterLevel: {
+                    name: 'Mực nước',
+                    value: 0,
+                    unit: 'cm',
+                    status: 'normal',
+                    range: { min: 10, max: 40 },
+                    location: 'Hồ cá chính',
+                    lastUpdate: new Date().toLocaleTimeString(),
+                    description: 'Mức nước đo bằng cm'
+                }
+            },
+
+            // Thông tin từ API
+            waterQuality: 'UNKNOWN',
+            rawData: null,
+            isLoading: true,
+            connectionStatus: 'connecting',
+            lastApiUpdate: null
         };
     }
 
     componentDidMount() {
-        // Mô phỏng cập nhật dữ liệu thời gian thực
+        // Fetch dữ liệu lần đầu
+        this.fetchSensorData();
+
+        // Cập nhật dữ liệu mỗi 5 giây
         this.interval = setInterval(() => {
-            this.updateSensorData();
-        }, 3000);
+            this.fetchSensorData();
+        }, 5000);
     }
 
     componentWillUnmount() {
@@ -55,27 +90,122 @@ class Sensors extends React.Component {
         }
     }
 
-    updateSensorData = () => {
+    // Fetch dữ liệu từ API
+    // Fetch dữ liệu từ API
+    fetchSensorData = async () => {
+        try {
+            console.log('Fetching sensor data from:', this.state.apiBaseUrl);
+            const response = await fetch(this.state.apiBaseUrl);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('Sensor API Response:', result);
+
+            // Sửa logic xử lý - data bây giờ là object, không phải array
+            if (result.success && result.data) {
+                const latestData = result.data; // Không cần [0] vì data là object
+                console.log('Latest sensor data:', latestData);
+                this.updateSensorData(latestData);
+                this.setState({
+                    isLoading: false,
+                    connectionStatus: 'connected',
+                    lastApiUpdate: new Date(),
+                    waterQuality: latestData.water_quality || 'UNKNOWN',
+                    rawData: latestData
+                });
+            } else {
+                console.warn('No sensor data received from API:', result);
+                this.setState({
+                    isLoading: false,
+                    connectionStatus: 'error'
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching sensor data:', error);
+            this.setState({
+                connectionStatus: 'error',
+                isLoading: false
+            });
+        }
+    }
+
+    // Cập nhật dữ liệu cảm biến từ API
+    updateSensorData = (data) => {
+        const now = new Date().toLocaleTimeString();
+
+        // Đảm bảo có giá trị mặc định
+        const temperatureValue = data.temperature_c !== undefined ? parseFloat(data.temperature_c) : 0;
+        const turbidityValue = data.turbidity_ntu !== undefined ? parseFloat(data.turbidity_ntu) : 0;
+        const currentValue = data.current_a !== undefined ? parseFloat(data.current_a) : 0;
+        const dissolvedOxygenValue = data.dissolved_oxygen !== undefined ? parseFloat(data.dissolved_oxygen) : 0;
+    const waterLevelValue = data.water_level_cm !== undefined ? parseFloat(data.water_level_cm) : 0;
+
         this.setState(prevState => ({
             sensors: {
-                ...prevState.sensors,
-                pumpCurrent: {
-                    ...prevState.sensors.pumpCurrent,
-                    value: +(2.0 + Math.random() * 1.5).toFixed(1),
-                    lastUpdate: new Date().toLocaleTimeString()
+                temperature: {
+                    ...prevState.sensors.temperature,
+                    value: temperatureValue.toFixed(1),
+                    status: this.getTemperatureStatus(temperatureValue),
+                    lastUpdate: now
                 },
                 turbidity: {
                     ...prevState.sensors.turbidity,
-                    value: +(5 + Math.random() * 15).toFixed(1),
-                    lastUpdate: new Date().toLocaleTimeString()
+                    value: turbidityValue.toFixed(1),
+                    status: this.getTurbidityStatus(turbidityValue),
+                    lastUpdate: now
                 },
-                temperature: {
-                    ...prevState.sensors.temperature,
-                    value: +(24 + Math.random() * 6).toFixed(1),
-                    lastUpdate: new Date().toLocaleTimeString()
+                current: {
+                    ...prevState.sensors.current,
+                    value: currentValue.toFixed(3),
+                    status: this.getCurrentStatus(currentValue),
+                    lastUpdate: now
+                },
+                dissolvedOxygen: {
+                    ...prevState.sensors.dissolvedOxygen,
+                    value: dissolvedOxygenValue.toFixed(2),
+                    status: this.getDissolvedOxygenStatus(dissolvedOxygenValue),
+                    lastUpdate: now
+                },
+                waterLevel: {
+                    ...prevState.sensors.waterLevel,
+                    value: waterLevelValue.toFixed(2),
+                    status: (waterLevelValue < 5 ? 'danger' : (waterLevelValue < 10 ? 'warning' : 'normal')),
+                    lastUpdate: now
                 }
             }
         }));
+    }
+
+    // Xác định trạng thái nhiệt độ
+    getTemperatureStatus = (temp) => {
+        if (temp < 24 || temp > 30) return 'danger';
+        if (temp < 25 || temp > 29) return 'warning';
+        return 'normal';
+    }
+
+    // Xác định trạng thái độ đục
+    getTurbidityStatus = (ntu) => {
+        if (ntu > 500) return 'danger';
+        if (ntu > 100) return 'warning';
+        return 'normal';
+    }
+
+    // Xác định trạng thái dòng điện
+    getCurrentStatus = (current) => {
+        if (current > 1.0 || current < 0.2) return 'danger';
+        if (current > 0.8 || current < 0.3) return 'warning';
+        return 'normal';
+    }
+
+    // Xác định trạng thái oxy hòa tan
+    getDissolvedOxygenStatus = (do_value) => {
+        if (do_value < 5.0) return 'danger';     // Dưới 5mg/L nguy hiểm
+        if (do_value < 6.0) return 'warning';    // 5-6mg/L cảnh báo
+        if (do_value > 12.0) return 'warning';   // Trên 12mg/L cũng không tốt
+        return 'normal';                         // 6-12mg/L bình thường
     }
 
     getStatusColor = (status) => {
@@ -106,25 +236,80 @@ class Sensors extends React.Component {
         return Math.max(0, Math.min(100, percentage));
     }
 
+    // Get connection status badge
+    getConnectionBadge = () => {
+        const { connectionStatus } = this.state;
+        const statusConfig = {
+            connecting: { color: 'warning', text: 'Đang kết nối...' },
+            connected: { color: 'success', text: 'Trực tuyến' },
+            error: { color: 'danger', text: 'Mất kết nối' }
+        };
+
+        const config = statusConfig[connectionStatus] || statusConfig.error;
+        return <Badge color={config.color}>{config.text}</Badge>;
+    }
+
     render() {
-        const { sensors } = this.state;
+        const {
+            sensors,
+            waterQuality,
+            rawData,
+            isLoading,
+            connectionStatus,
+            lastApiUpdate
+        } = this.state;
 
         return (
             <div>
-                <h1 className="page-title">
-                    🌡️ Quản lý Cảm biến &nbsp;
-                    <small>
-                        <small>Theo dõi các thông số môi trường</small>
-                    </small>
-                </h1>
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                    <h1 className="page-title mb-0">
+                        🌡️ Quản lý Cảm biến &nbsp;
+                        <small>
+                            <small>Theo dõi các thông số môi trường</small>
+                        </small>
+                    </h1>
+
+                    <div className="d-flex align-items-center">
+                        {this.getConnectionBadge()}
+                        {lastApiUpdate && (
+                            <small className="text-muted ml-3">
+                                Cập nhật: {lastApiUpdate.toLocaleTimeString()}
+                            </small>
+                        )}
+                    </div>
+                </div>
+
+                {/* Debug Panel - Hiển thị dữ liệu API thô */}
+
+
+                {/* Thông tin chất lượng nước */}
+                {waterQuality && waterQuality !== 'UNKNOWN' && (
+                    <Row className="mb-4">
+                        <Col lg={12}>
+                            <Widget>
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 className="mb-1">🌊 Chất lượng nước hiện tại</h6>
+                                        <h4 className={`mb-0 ${waterQuality.includes('DUC') ? 'text-danger' : 'text-success'}`}>
+                                            {waterQuality}
+                                        </h4>
+                                    </div>
+                                    <div className="text-right">
+                                        <small className="text-muted">Đánh giá tự động từ cảm biến độ đục</small>
+                                    </div>
+                                </div>
+                            </Widget>
+                        </Col>
+                    </Row>
+                )}
 
                 <Row>
                     {Object.keys(sensors).map((key) => {
                         const sensor = sensors[key];
-                        const percentage = this.calculatePercentage(sensor.value, sensor.range);
+                        const percentage = this.calculatePercentage(parseFloat(sensor.value), sensor.range);
 
                         return (
-                            <Col lg={4} md={6} key={key} className="mb-4">
+                            <Col lg={3} md={6} key={key} className="mb-4">
                                 <Widget>
                                     <div className={s.sensorWidget}>
                                         <div className="d-flex justify-content-between align-items-center mb-3">
@@ -136,7 +321,7 @@ class Sensors extends React.Component {
 
                                         <div className={s.sensorValue}>
                                             <span className={`${s.value} text-${this.getStatusColor(sensor.status)}`}>
-                                                {sensor.value}
+                                                {isLoading ? '...' : sensor.value}
                                             </span>
                                             <span className={`${s.unit} text-muted`}>
                                                 {sensor.unit}
@@ -193,8 +378,8 @@ class Sensors extends React.Component {
                             <div className="row">
                                 <div className="col-md-3 col-6 text-center mb-3">
                                     <div className={s.statCard}>
-                                        <h4 className="text-success">3</h4>
-                                        <small className="text-muted">Tổng số cảm biến</small>
+                                        <h4 className="text-success">4</h4>
+                                        <small className="text-muted">Tổng số giá trị</small>
                                     </div>
                                 </div>
                                 <div className="col-md-3 col-6 text-center mb-3">

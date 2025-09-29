@@ -10,24 +10,7 @@ const QuickActions = ({
     isFeeding
 }) => {
     const actions = [
-        {
-            id: 'light',
-            icon: '💡',
-            title: lightStatus ? 'Tắt đèn' : 'Bật đèn',
-            description: lightStatus ? 'Đèn đang bật' : 'Đèn đang tắt',
-            color: lightStatus ? 'warning' : 'success',
-            onClick: onToggleLight,
-            status: lightStatus
-        },
-        {
-            id: 'feed',
-            icon: '🍽️',
-            title: 'Cho cá ăn',
-            description: isFeeding ? 'Đang cho ăn...' : 'Cho ăn ngay lập tức',
-            color: 'primary',
-            onClick: onFeedFish,
-            disabled: isFeeding
-        },
+
         {
             id: 'reset',
             icon: '🔄',
