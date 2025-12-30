@@ -378,7 +378,7 @@ class Sensors extends React.Component {
                             <div className="row">
                                 <div className="col-md-3 col-6 text-center mb-3">
                                     <div className={s.statCard}>
-                                        <h4 className="text-success">4</h4>
+                                        <h4 className="text-success">5</h4>
                                         <small className="text-muted">Tổng số giá trị</small>
                                     </div>
                                 </div>

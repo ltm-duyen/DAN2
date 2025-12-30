@@ -59,17 +59,26 @@ class Dashboard extends React.Component {
   }
 
   componentDidMount() {
-    // Fetch dữ liệu lần đầu
-    this.fetchLatestData();
-    this.fetchAllData();
+    console.log('🚀 Dashboard component mounted');
+    console.log('🔗 API URL:', this.state.apiBaseUrl);
+    
+    // Delay nhỏ để đảm bảo component đã render xong
+    setTimeout(() => {
+      console.log('⏰ Starting initial data fetch...');
+      // Fetch dữ liệu lần đầu
+      this.fetchLatestData();
+      this.fetchAllData();
+    }, 1000);
 
     // Cập nhật dữ liệu mỗi 5 giây
     this.dataInterval = setInterval(() => {
+      console.log('🔄 Interval fetch at:', new Date().toLocaleTimeString());
       this.fetchLatestData();
     }, 5000);
 
     // Fetch lịch sử dữ liệu mỗi 30 giây
     this.chartInterval = setInterval(() => {
+      console.log('📊 Chart data fetch at:', new Date().toLocaleTimeString());
       this.fetchAllData();
     }, 30000);
   }
@@ -86,19 +95,38 @@ class Dashboard extends React.Component {
   // Fetch dữ liệu mới nhất từ API
   fetchLatestData = async () => {
     try {
-      console.log('Fetching data from:', this.state.apiBaseUrl);
+      console.log('🔄 Fetching data from:', this.state.apiBaseUrl);
+      console.log('🕐 Current time:', new Date().toLocaleTimeString());
+      
       const response = await fetch(this.state.apiBaseUrl);
+      console.log('📡 Response status:', response.status, response.statusText);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result = await response.json();
-      console.log('API Response:', result);
+      const text = await response.text();
+      console.log('📄 Raw response length:', text.length);
+      console.log('📄 First 200 chars:', text.substring(0, 200));
+
+      if (!text.trim()) {
+        throw new Error('Empty response from server');
+      }
+
+      const result = JSON.parse(text);
+      console.log('✅ Parsed JSON successfully');
+      console.log('📊 API Response structure:', {
+        success: result.success,
+        count: result.count,
+        dataLength: result.data?.length || 0,
+        firstItem: result.data?.[0] || null
+      });
 
       if (result.success && result.data && result.data.length > 0) {
         const latestData = result.data[0];
-        console.log('Latest data:', latestData);
+        console.log('🎯 Latest data:', latestData);
+        console.log('🎯 Calling updateSensorsFromAPI with:', latestData);
+        
         this.updateSensorsFromAPI(latestData);
         this.setState({
           isLoading: false,
@@ -107,15 +135,20 @@ class Dashboard extends React.Component {
           waterQuality: latestData.water_quality || 'UNKNOWN',
           rawData: latestData
         });
+        console.log('✅ State updated successfully');
       } else {
-        console.warn('No data received from API:', result);
+        console.warn('⚠️ No data received from API:', result);
         this.setState({
           isLoading: false,
           connectionStatus: 'error'
         });
       }
     } catch (error) {
-      console.error('Error fetching latest data:', error);
+      console.error('❌ Error fetching latest data:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
       this.setState({
         connectionStatus: 'error',
         isLoading: false
@@ -127,9 +160,19 @@ class Dashboard extends React.Component {
   fetchAllData = async () => {
     try {
       const response = await fetch(this.state.apiBaseUrl);
-      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      if (result.success && result.data.length > 0) {
+      const text = await response.text();
+      if (!text.trim()) {
+        throw new Error('Empty response from server');
+      }
+
+      const result = JSON.parse(text);
+
+      if (result.success && result.data && result.data.length > 0) {
         this.updateChartData(result.data);
       }
     } catch (error) {
@@ -139,14 +182,22 @@ class Dashboard extends React.Component {
 
   // Cập nhật dữ liệu cảm biến từ API response
   updateSensorsFromAPI = (data) => {
-    console.log('Updating sensors with data:', data);
+    console.log('🔧 updateSensorsFromAPI called with:', data);
 
     // Đảm bảo có giá trị mặc định nếu API không trả về
     const temperatureValue = data.temperature_c !== undefined ? parseFloat(data.temperature_c) : 0;
     const turbidityValue = data.turbidity_ntu !== undefined ? parseFloat(data.turbidity_ntu) : 0;
     const currentValue = data.current_a !== undefined ? parseFloat(data.current_a) : 0;
-  const dissolvedOxygenValue = data.dissolved_oxygen !== undefined ? parseFloat(data.dissolved_oxygen) : 0;
-  const waterLevelValue = data.water_level_cm !== undefined ? parseFloat(data.water_level_cm) : 0;
+    const dissolvedOxygenValue = data.dissolved_oxygen !== undefined ? parseFloat(data.dissolved_oxygen) : 0;
+    const waterLevelValue = data.water_level_cm !== undefined ? parseFloat(data.water_level_cm) : 0;
+
+    console.log('🔢 Parsed values:', {
+      temperature: temperatureValue,
+      turbidity: turbidityValue,
+      current: currentValue,
+      dissolvedOxygen: dissolvedOxygenValue,
+      waterLevel: waterLevelValue
+    });
 
     const sensors = {
       temperature: {
@@ -176,12 +227,15 @@ class Dashboard extends React.Component {
       }
     };
 
-    console.log('Processed sensors:', sensors);
+    console.log('🎛️ Processed sensors:', sensors);
 
     // Tạo cảnh báo nếu cần
     this.checkAndCreateAlerts(sensors, data);
 
-    this.setState({ sensors });
+    console.log('💾 Setting state with new sensors...');
+    this.setState({ sensors }, () => {
+      console.log('✅ State updated! New sensors in state:', this.state.sensors);
+    });
   }
 
   // Cập nhật dữ liệu biểu đồ
@@ -331,7 +385,27 @@ class Dashboard extends React.Component {
     }));
   }
 
+  // Xử lý bật/tắt đèn
+  handleToggleLight = () => {
+    this.handleToggleDevice(3); // Device ID 3 là đèn chiếu sáng
+  }
 
+  // Xử lý cho ăn cá
+  handleFeedFish = () => {
+    this.setState({ isFeeding: true });
+    
+    // Giả lập quá trình cho ăn (3 giây)
+    setTimeout(() => {
+      this.setState(prevState => ({
+        isFeeding: false,
+        devices: prevState.devices.map(device =>
+          device.type === 'feeder'
+            ? { ...device, lastFeed: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) }
+            : device
+        )
+      }));
+    }, 3000);
+  }
 
   // Xử lý xóa cảnh báo
   handleDismissAlert = (index) => {

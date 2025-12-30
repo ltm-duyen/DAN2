@@ -101,35 +101,26 @@ class Sidebar extends React.Component {
                         link="/app/sensors"
                         index="core"
                     />
+
+
                     <LinksGroup
-                        onActiveSidebarItemChange={t => this.props.dispatch(changeActiveSidebarItem(t))}
+                        onActiveSidebarItemChange={activeItem => this.props.dispatch(changeActiveSidebarItem(activeItem))}
                         activeItem={this.props.activeItem}
-                        header="Controls"
+                        header="Charts"
                         isHeader
-                        iconName={<TablesIcon className={s.menuIcon} />}
-                        link="/app/controls"
-                        index="tables"
+                        iconName={<ComponentsIcon className={s.menuIcon} />}
+                        link="/app/components/charts"
+                        index="components"
                     />
 
                     <LinksGroup
                         onActiveSidebarItemChange={activeItem => this.props.dispatch(changeActiveSidebarItem(activeItem))}
                         activeItem={this.props.activeItem}
-                        header="Components"
+                        header="Fish Monitor"
                         isHeader
                         iconName={<ComponentsIcon className={s.menuIcon} />}
-                        link="/app/components"
-                        index="components"
-                        childrenLinks={[
-                            {
-                                header: 'Charts', link: '/app/components/charts',
-                            },
-                            {
-                                header: 'Icons', link: '/app/components/icons',
-                            },
-                            {
-                                header: 'Maps', link: '/app/components/maps',
-                            },
-                        ]}
+                        link="/app/components/fish-monitor"
+                        index="fish-monitor"
                     />
 
                     <LinksGroup

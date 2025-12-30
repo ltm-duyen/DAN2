@@ -63,8 +63,39 @@ class Charts extends React.Component {
             max: 35
           },
           tooltip: {
+            enabled: true,
+            shared: false,
+            intersect: false,
+            followCursor: true,
+            custom: undefined,
+            fillSeriesColor: false,
+            theme: 'dark',
             x: {
-              format: 'dd/MM/yy HH:mm'
+              show: true,
+              format: 'dd/MM/yyyy HH:mm:ss',
+              formatter: undefined
+            },
+            y: {
+              formatter: function(value) {
+                return value.toFixed(2) + ' °C';
+              },
+              title: {
+                formatter: function (seriesName) {
+                  return seriesName + ': ';
+                }
+              }
+            },
+            marker: {
+              show: true
+            },
+            items: {
+              display: 'flex'
+            },
+            fixed: {
+              enabled: false,
+              position: 'topRight',
+              offsetX: 0,
+              offsetY: 0
             }
           },
           grid: {
@@ -118,8 +149,27 @@ class Charts extends React.Component {
             }
           },
           tooltip: {
+            enabled: true,
+            shared: false,
+            intersect: false,
+            followCursor: true,
+            theme: 'dark',
             x: {
-              format: 'dd/MM/yy HH:mm'
+              show: true,
+              format: 'dd/MM/yyyy HH:mm:ss'
+            },
+            y: {
+              formatter: function(value) {
+                return value.toFixed(2) + ' NTU';
+              },
+              title: {
+                formatter: function (seriesName) {
+                  return seriesName + ': ';
+                }
+              }
+            },
+            marker: {
+              show: true
             }
           }
         }
@@ -158,11 +208,29 @@ class Charts extends React.Component {
               text: 'Dòng điện (A)'
             },
             min: 0,
-            max: 2
           },
           tooltip: {
+            enabled: true,
+            shared: false,
+            intersect: false,
+            followCursor: true,
+            theme: 'dark',
             x: {
-              format: 'dd/MM/yy HH:mm'
+              show: true,
+              format: 'dd/MM/yyyy HH:mm:ss'
+            },
+            y: {
+              formatter: function(value) {
+                return value.toFixed(3) + ' A';
+              },
+              title: {
+                formatter: function (seriesName) {
+                  return seriesName + ': ';
+                }
+              }
+            },
+            marker: {
+              show: true
             }
           }
         }
@@ -208,11 +276,29 @@ class Charts extends React.Component {
               text: 'Oxy hòa tan (mg/L)'
             },
             min: 0,
-            max: 15
           },
           tooltip: {
+            enabled: true,
+            shared: false,
+            intersect: false,
+            followCursor: true,
+            theme: 'dark',
             x: {
-              format: 'dd/MM/yy HH:mm'
+              show: true,
+              format: 'dd/MM/yyyy HH:mm:ss'
+            },
+            y: {
+              formatter: function(value) {
+                return value.toFixed(2) + ' mg/L';
+              },
+              title: {
+                formatter: function (seriesName) {
+                  return seriesName + ': ';
+                }
+              }
+            },
+            marker: {
+              show: true
             }
           }
         }
@@ -408,7 +494,7 @@ class Charts extends React.Component {
           <Col lg={3} md={6} className="mb-3">
             <Widget>
               <div className="text-center">
-                <h4 className="text-success">3</h4>
+                <h4 className="text-success">4</h4>
                 <small className="text-muted">Cảm biến hoạt động</small>
               </div>
             </Widget>
@@ -571,8 +657,43 @@ class Charts extends React.Component {
                       chart: { type: 'line', height: 350 },
                       stroke: { curve: 'smooth' },
                       colors: ['#007bff'],
-                      xaxis: { type: 'datetime' },
-                      yaxis: { title: { text: 'Mực nước (cm)' } }
+                      title: {
+                        text: 'Biểu đồ mực nước 24h',
+                        align: 'left'
+                      },
+                      xaxis: { 
+                        type: 'datetime',
+                        title: {
+                          text: 'Thời gian'
+                        }
+                      },
+                      yaxis: { 
+                        title: { text: 'Mực nước (cm)' } 
+                      },
+                      tooltip: {
+                        enabled: true,
+                        shared: false,
+                        intersect: false,
+                        followCursor: true,
+                        theme: 'dark',
+                        x: {
+                          show: true,
+                          format: 'dd/MM/yyyy HH:mm:ss'
+                        },
+                        y: {
+                          formatter: function(value) {
+                            return value.toFixed(1) + ' cm';
+                          },
+                          title: {
+                            formatter: function (seriesName) {
+                              return seriesName + ': ';
+                            }
+                          }
+                        },
+                        marker: {
+                          show: true
+                        }
+                      }
                     }}
                     type="line"
                   />
@@ -637,9 +758,9 @@ class Charts extends React.Component {
                       },
                       stroke: {
                         curve: 'smooth',
-                        width: [3, 2, 2, 2]
+                        width: [3, 2, 2, 2, 2]
                       },
-                      colors: ['#dc3545', '#ffc107', '#28a745', '#17a2b8'],
+                      colors: ['#dc3545', '#ffc107', '#28a745', '#17a2b8', '#007bff'],
                       title: {
                         text: 'Tất cả cảm biến trên cùng biểu đồ',
                         align: 'left'
@@ -685,8 +806,29 @@ class Charts extends React.Component {
                         }
                       ],
                       tooltip: {
+                        enabled: true,
+                        shared: true,
+                        intersect: false,
+                        followCursor: true,
+                        theme: 'dark',
                         x: {
-                          format: 'dd/MM/yy HH:mm'
+                          show: true,
+                          format: 'dd/MM/yyyy HH:mm:ss'
+                        },
+                        y: {
+                          formatter: function(value, { seriesIndex }) {
+                            const units = ['°C', 'NTU', 'A', 'mg/L', 'cm'];
+                            const decimals = [2, 2, 3, 2, 1];
+                            return value.toFixed(decimals[seriesIndex]) + ' ' + units[seriesIndex];
+                          },
+                          title: {
+                            formatter: function (seriesName) {
+                              return seriesName + ': ';
+                            }
+                          }
+                        },
+                        marker: {
+                          show: true
                         }
                       },
                       legend: {

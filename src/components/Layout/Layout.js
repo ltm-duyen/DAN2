@@ -15,6 +15,7 @@ import Dashboard from '../../pages/dashboard';
 import Sensors from '../../pages/sensors/Sensors';
 import Controls from '../../pages/controls/Controls';
 import Settings from '../../pages/settings/Settings';
+import FishMonitor from '../../pages/components/fish-monitor/FishMonitor';
 
 import Header from '../Header';
 import Sidebar from '../Sidebar';
@@ -88,6 +89,8 @@ class Layout extends React.Component {
                     <Route path="/app/components/formulas" exact component={UIIcons} />
                     {/* <Route path="/app/notifications" exact component={UINotifications} /> */}
                     <Route path="/app/components/charts" exact component={Charts} />
+                    <Route path="/app/components/fish-monitor" exact component={FishMonitor} />
+
                     {/* <Route path="/app/tables" exact component={TablesStatic} /> */}
                     {/* <Route path="/app/components/maps" exact component={MapsGoogle} /> */}
                   </Switch>
