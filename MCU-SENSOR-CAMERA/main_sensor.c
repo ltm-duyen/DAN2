@@ -64,9 +64,26 @@ float readCurrent()
     return current;
 }
 
+// ==== Hàm tính DO saturation (mg/L) từ nhiệt độ ====
+// Sử dụng công thức đơn giản hóa từ APHA Standard Methods
+// DO_sat = 14.652 - 0.41022*T + 0.007991*T^2 - 0.000077774*T^3
+// Với T là nhiệt độ nước (°C), áp suất 1 atm, độ mặn 0 ppt
+float calculateDOSaturation(float tempC)
+{
+    if (tempC < 0 || tempC > 40)
+    {
+        return -1; // Giá trị lỗi nếu nhiệt độ ngoài phạm vi
+    }
+
+    float T = tempC;
+    float DO_sat = 14.652 - 0.41022 * T + 0.007991 * T * T - 0.000077774 * T * T * T;
+
+    return DO_sat;
+}
+
 // ==== Hàm gửi dữ liệu lên server ====
 void sendDataToServer(int turbidityADC, float turbidityVolt, float ntu, String waterQuality,
-                      float tempC, float current, int waterLevelADC, float waterLevelCm)
+                      float tempC, float current, int waterLevelADC, float waterLevelCm, float doSat)
 {
     HTTPClient http;
     WiFiClient client;
@@ -82,7 +99,8 @@ void sendDataToServer(int turbidityADC, float turbidityVolt, float ntu, String w
                       "&temperature_c=" + String(tempC, 2) +
                       "&current_a=" + String(current, 3) +
                       "&water_level_adc=" + String(waterLevelADC) +
-                      "&water_level_cm=" + String(waterLevelCm, 1);
+                      "&water_level_cm=" + String(waterLevelCm, 1) +
+                      "&do_saturation=" + String(doSat, 2);
 
     Serial.println("Sending data to server...");
     Serial.println("POST Data: " + postData);
@@ -234,9 +252,32 @@ void loop()
     int turbidityADC = analogRead(TURBIDITY_PIN);
     float turbidityVolt = (turbidityADC * VCC) / ADC_RES;
 
-    // ÉP CỨNG: luôn đục ~400 NTU
-    float ntu = 406.0;
-    String waterQuality = "DUC";
+    float ntu;
+    if (turbidityVolt >= clearWaterVoltage)
+    {
+        ntu = 0;
+    }
+    else if (turbidityVolt <= dirtyWaterVoltage)
+    {
+        ntu = maxNTU;
+    }
+    else
+    {
+        ntu = (clearWaterVoltage - turbidityVolt) /
+              (clearWaterVoltage - dirtyWaterVoltage) * maxNTU;
+    }
+
+    String waterQuality;
+    if (ntu <= 100)
+        waterQuality = "SACH";
+    else if (ntu <= 300)
+        waterQuality = "KHA TRONG";
+    else if (ntu <= 600)
+        waterQuality = "HOI DUC";
+    else if (ntu <= 1200)
+        waterQuality = "DUC";
+    else
+        waterQuality = "RAT DUC";
 
     Serial.println("============================");
     Serial.print("Turbidity ADC: ");
@@ -261,6 +302,18 @@ void loop()
 
     Serial.print("Temp C: ");
     Serial.println(tempC, 2);
+
+    // ---- Tính DO saturation từ nhiệt độ ----
+    float doSaturation = calculateDOSaturation(tempC);
+    Serial.print("DO Saturation (mg/L): ");
+    if (doSaturation < 0)
+    {
+        Serial.println("Error - Temperature out of range");
+    }
+    else
+    {
+        Serial.println(doSaturation, 2);
+    }
 
     // ---- Đọc dòng điện ----
     float current = readCurrent();
@@ -302,7 +355,7 @@ void loop()
     if (WiFi.status() == WL_CONNECTED)
     {
         sendDataToServer(turbidityADC, turbidityVolt, ntu, waterQuality,
-                         tempC, current, waterLevelADC, waterLevelCm);
+                         tempC, current, waterLevelADC, waterLevelCm, doSaturation);
         lastWifiCheck = millis();
     }
     else

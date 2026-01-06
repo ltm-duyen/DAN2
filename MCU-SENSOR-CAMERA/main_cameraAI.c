@@ -100,6 +100,7 @@ String httpGet(const char *path)
         Serial.println("connect fail");
         return "";
     }
+    
     cli.print(String("GET ") + path + " HTTP/1.1\r\nHost: " + HOST +
               "\r\nConnection: close\r\n\r\n");
     unsigned long t0 = millis();
